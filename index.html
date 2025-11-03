@@ -76,7 +76,8 @@
         .status-text {
             display: none;
         }
-        #mapCanvas{
+
+        #mapCanvas {
             position: absolute;
             top: 0;
             left: 0;
@@ -131,7 +132,7 @@
         }
 
         .card {
-            width: 200px;
+            width: 140px;
             height: 70px;
             background: linear-gradient(135deg, #4a90e2, #2c7bb6);
             border-radius: 15px;
@@ -154,18 +155,13 @@
         }
 
         .location {
-            font-size: 20px;
+            font-size: 14px;
             font-weight: bold;
         }
 
         .status {
             background-color: rgba(255, 255, 255, 0.9);
             color: #4a90e2;
-            border-radius: 15px;
-            padding: 5px 12px;
-            font-size: 14px;
-            font-weight: bold;
-            z-index: 10;
         }
 
         .statusChecked {
@@ -173,14 +169,18 @@
             color: #fff;
             border-radius: 15px;
             border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .status,
+        .statusChecked {
             padding: 5px 12px;
-            font-size: 14px;
+            font-size: 8px;
             font-weight: bold;
             z-index: 10;
         }
 
         .title {
-            font-size: 18px;
+            font-size: 16px;
             margin-top: 10px;
             font-weight: normal;
             position: relative;
@@ -780,7 +780,7 @@
                     console.error("Error:", error);
                     statusText.textContent = `获取位置失败: ${error}。`;
                 });
-            setTimeout(() => { 
+            setTimeout(() => {
                 getUserLocation()
             }, 1000);
         }
