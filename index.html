@@ -132,7 +132,7 @@
         }
 
         .card {
-            width: 160px;
+            width: 140px;
             height: 52px;
             background: linear-gradient(135deg, #4a90e2, #2c7bb6);
             border-radius: 15px;
@@ -357,6 +357,8 @@
             // 初始化迷雾
             init() {
                 this.resetFog();
+                // 修改: 尝试从localStorage恢复迷雾状态
+                this.restoreFogState();
                 this.updateDisplay();
             }
 
@@ -373,6 +375,8 @@
                 this.maskCtx.arc(x, y, radius, 0, Math.PI * 2);
                 this.maskCtx.fill();
                 this.maskCtx.globalCompositeOperation = 'source-over';
+                // 修改: 保存迷雾状态到localStorage
+                this.saveFogState();
             }
 
             // 设置用户位置
@@ -481,6 +485,33 @@
                 return { lat, lng };
             }
 
+            // 新增方法：保存迷雾状态到localStorage
+            saveFogState() {
+                try {
+                    const fogDataUrl = this.maskCanvas.toDataURL();
+                    localStorage.setItem('warFogState', fogDataUrl);
+                } catch (e) {
+                    console.warn('无法保存迷雾状态到localStorage:', e);
+                }
+            }
+
+            // 新增方法：从localStorage恢复迷雾状态
+            restoreFogState() {
+                try {
+                    const savedFogDataUrl = localStorage.getItem('warFogState');
+                    if (savedFogDataUrl) {
+                        const img = new Image();
+                        img.onload = () => {
+                            this.maskCtx.drawImage(img, 0, 0);
+                            this.updateDisplay();
+                        };
+                        img.src = savedFogDataUrl;
+                    }
+                } catch (e) {
+                    console.warn('无法从localStorage恢复迷雾状态:', e);
+                }
+            }
+
             // 新增清除迷雾的方法
             clearFog() {
                 // 修改: 使用正确比例绘制背景图片
@@ -502,6 +533,9 @@
 
                     this.ctx.drawImage(this.backgroundImage, offsetX, offsetY, renderWidth, renderHeight);
                 }
+                // 修改: 清除所有迷雾并保存状态
+                this.maskCtx.clearRect(0, 0, this.maskCanvas.width, this.maskCanvas.height);
+                this.saveFogState();
             }
 
             // 新增方法：将用户位置居中显示
@@ -888,6 +922,5 @@
         window.onload = init;
     </script>
 </body>
-
 
 </html>
