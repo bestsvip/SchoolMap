@@ -791,19 +791,31 @@
             warFogMap.centerOnUser();
 
             statusText.textContent = `位置已更新 - 精度: ${Math.round(accuracy)} m - ${latitude.toFixed(6)}, ${longitude.toFixed(6)} `;
+            
+            // 修改: 添加位置信息打印到控制台
+            console.log('位置更新:', {
+                latitude: latitude.toFixed(6),
+                longitude: longitude.toFixed(6),
+                accuracy: Math.round(accuracy),
+                canvasX: newX.toFixed(2),
+                canvasY: newY.toFixed(2),
+                timestamp: new Date().toLocaleTimeString()
+            });
         }
 
         // 获取用户位置
         function getUserLocation() {
             statusText.textContent = '正在获取位置...';
 
-            // 使用 GeolocationService 类
+            // 直接启动持续定位监听，而不等待初始位置获取
+            // startContinuousLocationTracking();
+            
+            // 同时尝试获取当前位置用于快速定位
             const geolocationService = new GeolocationService();
-
             geolocationService.getLocation()
                 .then(location => {
-                    console.log("Location data:", location);
-                    statusText.textContent = '位置获取成功！等待位置更新...';
+                    console.log("Initial location data:", location);
+                    statusText.textContent = '位置获取成功！持续跟踪已启动...';
 
                     // 创建模拟位置对象以兼容现有代码
                     const mockPosition = {
@@ -818,14 +830,33 @@
                     handlePositionUpdate(mockPosition);
                 })
                 .catch(error => {
-                    console.error("Error:", error);
-                    statusText.textContent = `获取位置失败: ${error}。`;
+                    console.error("Initial location error:", error);
+                    statusText.textContent = `初始位置获取失败: ${error}。`;
+                }).finally(() => {
+                    getUserLocation()
                 });
-            setTimeout(() => {
-                getUserLocation()
-            }, 1000);
         }
 
+        // // 修改: 简化getUserLocationAndWatch函数，避免重复逻辑
+        // function startContinuousLocationTracking() {
+        //     if (watchId === null) {
+        //         statusText.textContent = '正在启动位置跟踪...';
+                
+        //         watchId = navigator.geolocation.watchPosition(
+        //             handlePositionUpdate,
+        //             (error) => {
+        //                 const geolocationService = new GeolocationService();
+        //                 console.error("Watch position error:", error);
+        //                 statusText.textContent = `定位错误: ${geolocationService.getErrorDescription(error)}`;
+        //             },
+        //             {
+        //                 enableHighAccuracy: true,
+        //                 maximumAge: 10000,
+        //                 timeout: 10000
+        //             }
+        //         );
+        //     }
+        // }
 
         // 停止位置监听
         function stopWatching() {
@@ -844,25 +875,10 @@
 
             // 重绘界面
             warFogMap.updateDisplay();
+            
+            // 重新开始位置跟踪
+            // startContinuousLocationTracking();
         }
-
-        // // 添加鼠标移动事件监听器
-        // canvas.addEventListener('mousemove', function (event) {
-        //     const rect = canvas.getBoundingClientRect();
-        //     const x = event.clientX - rect.left;
-        //     const y = event.clientY - rect.top;
-
-        //     // 将画布坐标转换为GPS坐标
-        //     const gpsCoords = warFogMap.canvasToGps(x, y);
-
-        //     // 显示坐标信息
-        //     coordinatesDisplay.textContent = `经纬度: ${gpsCoords.lat.toFixed(6)}, ${gpsCoords.lng.toFixed(6)}`;
-        // });
-
-        // // 添加鼠标离开事件监听器
-        // canvas.addEventListener('mouseleave', function () {
-        //     coordinatesDisplay.textContent = '';
-        // });
 
         // 修改: 添加处理hash变化的函数
         function handleHashChange() {
@@ -883,17 +899,6 @@
 
         // 初始化
         function init() {
-            // // 绑定重新定位按钮事件
-            // locateBtn.addEventListener('click', () => {
-            //     resetMap();
-            //     getUserLocation();
-            // });
-
-            // // 绑定清除迷雾按钮事件
-            // clearFogBtn.addEventListener('click', () => {
-            //     warFogMap.clearFog(); // 调用清除迷雾的方法
-            // });
-
             // 修改: 添加hash变化监听
             window.addEventListener('hashchange', handleHashChange);
 
@@ -912,7 +917,7 @@
             setGrid(2, Math.round(Buildings.length / 2), Buildings);
             handleHashChange();
 
-            // 获取初始位置
+            // 获取初始位置并启动持续跟踪
             getUserLocation();
             // 将用户位置居中
             warFogMap.centerOnUser();
