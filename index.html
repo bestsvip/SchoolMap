@@ -331,9 +331,8 @@
 
             // 清空容器内容
             container.innerHTML = '';
-
             // 动态生成网格项
-            for (let i = 1; i <= rows * columns; i++) {
+            for (let i = 1; i <= Building.length; i++) {
                 const item = document.createElement('div');
                 const modalfn = `createModal('${Building[i - 1].location} — ${Building[i - 1].title}','https://rw.jxnhu.edu.cn/images/22/06/09/15zoww82vf/flicker-1.jpg','<strong>${Building[i - 1].title}</strong>是学校的重要建筑之一。')`
                 if (Building[i - 1].status) {
