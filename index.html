@@ -1,0 +1,1643 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      itemprop="description"
+      content="我已经逛了20多个地方，但是还没有找到一个适合自己的地方，终于我来到了嘉兴南湖学院。"
+    />
+    <meta itemprop="name" content="跟我一起来打卡嘉兴南湖学院吧" />
+    <title>逛学院</title>
+    <style>
+      body {
+        background-color: #ffffff;
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        max-height: 100vh;
+        margin: 0;
+        padding: 0px;
+      }
+
+      .container {
+        text-align: center;
+      }
+
+      #mapCanvas {
+        background-color: #ffffff;
+        /* border: 2px solid #cccccc; */
+        display: block;
+        /* margin: 20px auto; */
+        touch-action: none;
+        /* 禁用默认触摸行为 */
+      }
+
+      .location-btn {
+        width: 80px;
+        height: 30px;
+        background-color: #007bff;
+        color: #ffffff;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        cursor: pointer;
+        margin: 10px 0;
+      }
+
+      .location-btn:hover {
+        background-color: #0056b3;
+      }
+
+      .hint-text {
+        color: #333333;
+        font-size: 16px;
+        margin: 10px 0;
+      }
+
+      .status-text {
+        color: #666666;
+        font-size: 14px;
+        margin: 10px 0;
+      }
+
+      .coordinates-display {
+        color: #007bff;
+        font-size: 14px;
+        margin: 10px 0;
+        min-height: 20px;
+      }
+
+      .instructions {
+        color: #888888;
+        font-size: 14px;
+        margin-top: 10px;
+        max-width: 600px;
+      }
+
+      .status-text {
+        display: none;
+      }
+
+      #mapCanvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+      }
+    </style>
+    <style>
+      /* 底部栏样式 */
+      .bottom-panel {
+        position: absolute;
+        left: 10px;
+        bottom: 10px;
+        right: 10px;
+        background-color: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+      }
+
+      .panel-content {
+        padding: 8px;
+        background-color: white;
+        display: flex;
+        flex-wrap: wrap;
+        display: grid;
+        gap: 8px;
+        /* 列间距 */
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .panel-content::-webkit-scrollbar {
+        display: none;
+      }
+
+      .card {
+        flex: 0 0 auto;
+        width: 80%;
+        max-width: 300px;
+        margin-right: 15px;
+        background: #f9f9f9;
+        border-radius: 8px;
+        padding: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      }
+
+      .card:last-child {
+        margin-right: 0;
+      }
+
+      .card {
+        width: 140px;
+        height: 52px;
+        background: linear-gradient(135deg, #4a90e2, #2c7bb6);
+        border-radius: 15px;
+        padding: 14px;
+        color: white;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+        scroll-behavior: smooth;
+        /* display: flex; */
+        /* flex-direction: column; */
+        /* justify-content: space-between; */
+      }
+
+      .top-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        z-index: 10;
+      }
+
+      .location {
+        font-size: 14px;
+        font-weight: bold;
+      }
+
+      .status {
+        background-color: rgba(255, 255, 255, 0.9);
+        color: #4a90e2;
+      }
+
+      .statusChecked {
+        /* background-color: rgba(255, 255, 255, 0.9); */
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.9);
+      }
+
+      .status,
+      .statusChecked {
+        border-radius: 15px;
+        padding: 5px 12px;
+        font-size: 8px;
+        font-weight: bold;
+        z-index: 10;
+      }
+
+      .title {
+        font-size: 16px;
+        margin-top: 4px;
+        font-weight: normal;
+        position: relative;
+        z-index: 10;
+      }
+
+      .detail-btn {
+        position: absolute;
+        bottom: 15px;
+        right: 15px;
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: underline;
+      }
+
+      .detail-btn:hover {
+        color: white;
+      }
+
+      .GateIcon {
+        transform: scale(0.4);
+        margin-top: -60px;
+        margin-left: -60px;
+        transform-origin: right top;
+      }
+    </style>
+    <style>
+      /* 弹窗样式 */
+      .modal {
+        /* display: none; */
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+      }
+
+      .modal-content {
+        background-color: #fff;
+        margin: 10% auto;
+        padding: 20px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 500px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        position: relative;
+      }
+
+      .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+        position: absolute;
+        right: 15px;
+        top: 10px;
+      }
+
+      .close:hover,
+      .close:focus {
+        color: black;
+      }
+
+      .modal-title {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #333;
+      }
+
+      .modal-image {
+        width: 100%;
+        max-height: 200px;
+        /* object-fit: cover; */
+        border-radius: 10px;
+      }
+      .modal-body {
+        margin-top: 10px;
+      }
+    </style>
+    <!-- 打卡容器 -->
+    <style>
+      :root {
+        --primary-color: #ff6b6b;
+        --bg-color: #f7f9fc;
+        --card-bg: #ffffff;
+      }
+
+      .check-in-card {
+        position: relative;
+        width: 320px;
+        height: 400px;
+        top: 40px;
+        background: var(--card-bg);
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+
+      .map-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0.05;
+        background-image: radial-gradient(#666 1px, transparent 1px);
+        background-size: 20px 20px;
+        z-index: 0;
+      }
+
+      .action-area {
+        position: relative;
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .locate-btn {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: none;
+        background: white;
+        box-shadow: 0 10px 25px rgba(52, 152, 219, 0.3);
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transition: all 0.3s ease;
+        outline: none;
+      }
+
+      .locate-btn svg {
+        width: 40px;
+        height: 40px;
+        fill: #3498db;
+        transition: fill 0.3s;
+      }
+
+      .ripple {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        border: 2px solid #3498db;
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .locate-btn.active .ripple {
+        animation: ripple-effect 1.5s infinite;
+      }
+
+      .locate-btn.active .ripple:nth-child(2) {
+        animation-delay: 0.5s;
+      }
+
+      @keyframes ripple-effect {
+        0% {
+          width: 100%;
+          height: 100%;
+          opacity: 0.8;
+          border-width: 2px;
+        }
+        100% {
+          width: 250%;
+          height: 250%;
+          opacity: 0;
+          border-width: 0px;
+        }
+      }
+
+      .btn-text {
+        margin-top: 20px;
+        color: #555;
+        font-weight: 600;
+        font-size: 16px;
+        letter-spacing: 1px;
+        transition: opacity 0.3s;
+      }
+
+      .stamp-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(3) rotate(-20deg);
+        opacity: 0;
+        pointer-events: none;
+        z-index: 20;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .stamp-container.show {
+        animation: stamp-in 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)
+          forwards;
+      }
+
+      @keyframes stamp-in {
+        0% {
+          transform: translate(-50%, -50%) scale(3) rotate(-20deg);
+          opacity: 0;
+        }
+        60% {
+          transform: translate(-50%, -50%) scale(0.9) rotate(5deg);
+          opacity: 1;
+        }
+        80% {
+          transform: translate(-50%, -50%) scale(1.1) rotate(-2deg);
+        }
+        100% {
+          transform: translate(-50%, -50%) scale(1) rotate(0deg);
+          opacity: 1;
+        }
+      }
+
+      .stamp-circle {
+        width: 140px;
+        height: 140px;
+        border: 6px solid var(--primary-color);
+        border-radius: 50%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        position: relative;
+        background: rgba(255, 107, 107, 0.05);
+        mask-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4'/%3E%3C/svg%3E");
+        -webkit-mask-image: url("data:image/svg+xml,%3Csvg width='200' height='200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.4'/%3E%3C/svg%3E");
+      }
+
+      .stamp-text {
+        color: var(--primary-color);
+        font-weight: 900;
+        font-size: 24px;
+        text-transform: uppercase;
+        writing-mode: vertical-rl;
+        letter-spacing: 5px;
+        text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+      }
+
+      .stamp-date {
+        position: absolute;
+        bottom: 25px;
+        font-size: 12px;
+        color: var(--primary-color);
+        font-weight: bold;
+        writing-mode: horizontal-tb;
+      }
+
+      .success-info {
+        position: absolute;
+        bottom: 40px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.5s ease 0.3s;
+        z-index: 15;
+        width: 80%;
+      }
+
+      .check-in-card.success .success-info {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .location-name {
+        font-size: 22px;
+        font-weight: 800;
+        color: #2c3e50;
+        margin-bottom: 5px;
+      }
+
+      .location-sub {
+        font-size: 14px;
+        color: #7f8c8d;
+      }
+
+      .check-in-card.success .action-area {
+        opacity: 0;
+        pointer-events: none;
+        transform: scale(0.8);
+        transition: all 0.3s ease;
+      }
+
+      .confetti-piece {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        background: #ffd700;
+        border-radius: 0;
+        pointer-events: none;
+        z-index: 30;
+      }
+
+      .reset-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        background: none;
+        border: none;
+        font-size: 12px;
+        color: #999;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: 50;
+      }
+      .check-in-card.success .reset-btn {
+        opacity: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- <p class="hint-text">允许位置访问以显示您的位置</p>
+        <p class="status-text" id="statusText">正在获取位置...</p>
+        <canvas id="mapCanvas" width="1975" height="2027"></canvas>
+        <canvas id="mapCanvas" width="1600" height="1800"></canvas>
+        <p class="coordinates-display" id="coordinatesDisplay"></p>
+        <button class="location-btn" id="locateBtn">重新定位</button>
+        <button class="location-btn" id="clearFogBtn">清除迷雾</button>
+        <p class="instructions">移动时会逐渐揭示地图。实际使用时，您的GPS位置更新会揭示地图。</p> -->
+      <p class="status-text" id="statusText" style="display: none">
+        正在获取位置...
+      </p>
+      <canvas
+        id="mapCanvas"
+        width="400"
+        height="450"
+        style="width: 100%"
+      ></canvas>
+    </div>
+    <div class="check-in-card" id="checkInCard" style="display: none">
+      <div class="map-bg"></div>
+      <button class="reset-btn" onclick="checkInReset()">再打一遍</button>
+
+      <div class="action-area">
+        <button
+          class="locate-btn active"
+          id="checkInLocateBtn"
+          aria-label="打卡"
+        >
+          <div class="ripple"></div>
+          <div class="ripple"></div>
+          <svg viewBox="0 0 24 24">
+            <path
+              d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"
+            />
+          </svg>
+        </button>
+        <div class="btn-text">点击此处打卡</div>
+      </div>
+
+      <div class="stamp-container" id="checkInStamp">
+        <div class="stamp-circle">
+          <div class="stamp-text">已打卡</div>
+          <div class="stamp-date" id="checkInStampDate">2025.11.03</div>
+        </div>
+      </div>
+
+      <div class="success-info">
+        <div class="location-name" id="checkInLocName">嘉兴南湖学院</div>
+        <div class="location-sub">📍 嘉兴市南湖区 | 刚刚</div>
+      </div>
+    </div>
+    <!-- 底部栏 -->
+    <div class="bottom-panel" id="bottomPanel">
+      <div class="panel-content" id="panel-content">
+        <!-- <div class="card">
+                <p>第一行内容：这是底部栏的第一行信息，您可以在这里显示相关的详细内容。</p>
+            </div> -->
+      </div>
+    </div>
+    <script>
+      /**
+       * 通用 Meta 标签更新函数
+       * @param {string} contentText - 要设置的描述文本
+       * @param {boolean} createIfMissing - 如果标签不存在是否自动创建 (默认 true)
+       */
+      function updateMetaDescription(contentText, createIfMissing = true) {
+        if (!contentText) return;
+
+        const selector = 'meta[name="description"]';
+        let metaTag = document.querySelector(selector);
+
+        if (!metaTag) {
+          if (createIfMissing) {
+            metaTag = document.createElement("meta");
+            metaTag.name = "description";
+            metaTag.setAttribute("itemprop", "description");
+            document.head.appendChild(metaTag);
+          } else {
+            console.warn("未找到 meta description 标签且未开启自动创建。");
+            return;
+          }
+        }
+
+        metaTag.setAttribute("content", contentText);
+        return true;
+      }
+
+      // --- 初始运行调用 ---
+      document.addEventListener("DOMContentLoaded", () => {
+        const myDynamicText =
+          "我已经逛了20多个地方，但是还没有找到一个适合自己的地方。";
+
+        // 调用函数
+        const success = updateMetaDescription(myDynamicText);
+
+        if (success) {
+          console.log("初始化完成：Meta Description 已更新。");
+        }
+      });
+    </script>
+    <!-- 引入高德地图API -->
+    <script
+      type="text/javascript"
+      src="https://webapi.amap.com/maps?v=2.0&key=54c700c16781d70ca2c4510594c6b27c"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://cache.amap.com/lbs/static/addToolbar.js"
+    ></script>
+    <script>
+      function createModal(name, pic, content) {
+        // console.log(name,map,content)
+        const modal = document.createElement("div");
+        modal.innerHTML = `<div id="modal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="document.querySelector('#modal').remove()">&times;</span>
+                <div class="modal-title">${name}</div>
+                <img src="${pic}" alt="${name}图片" class="modal-image">
+                <div style="color:#ccd;float:right;font-size:10px"> * 图片来源与互联网</div>
+                <div dlass="modal-body">
+                    <br>
+                    ${content}
+                </div>
+                </div>
+                </div>`;
+        document.body.appendChild(modal);
+    }
+    </script>
+    <script>
+      const svg = `<svg version="1.1" id="svg1" width="254.23466" height="223.95734" viewBox="0 0 254.23466 223.95734">
+              <defs>
+                <linearGradient  id="Gradient1">
+                    <stop offset="0%" stop-color="#c22b1f" />
+                    <stop offset="100%" stop-color="#1d2c71" />
+                </linearGradient >
+            </defs>
+            <g>
+                <path fill="url(#Gradient1)" id="path1" d="m 0,0 c 0,15.611 0.032,31.223 -0.057,46.833 -0.008,1.349 1.305,3.82 -2.009,3.643 -2.421,-0.129 -3.766,-0.635 -3.758,-3.646 0.077,-31.221 -0.004,-62.442 -0.049,-93.663 -0.003,-1.915 -0.289,-3.617 2.752,-3.592 2.874,0.023 3.171,1.232 3.16,3.591 C -0.038,-31.223 -0.001,-15.611 0,0 m -34.846,65.662 c 0,1.622 0.002,3.244 -0.001,4.866 -0.008,4.62 0.001,4.585 -4.406,3.374 -26.124,-7.176 -50.409,-18.336 -73.264,-32.894 -5.055,-3.22 -6.904,-6.588 -6.322,-12.285 0.315,-3.084 0.672,-3.632 3.549,-2.107 22.955,12.166 47.115,21.277 72.143,28.16 8.32,2.288 8.301,2.36 8.301,10.886 m 13.439,-70.293 c 0,-2.496 0,-4.993 0,-7.489 0,-13.607 -0.019,-27.213 0.035,-40.819 0.005,-1.185 -0.774,-3.169 1.417,-3.216 6.113,-0.132 12.231,-0.054 18.347,-0.043 0.833,0.002 1.437,0.356 1.465,1.298 0.028,0.966 -0.597,1.292 -1.419,1.355 -0.745,0.057 -1.495,0.066 -2.243,0.078 -4.997,0.082 -5.012,0.081 -5.005,5.144 0.04,29.458 0.091,58.916 0.13,88.375 0.013,9.642 0.032,9.511 -9.35,7.397 -2.801,-0.632 -3.456,-1.84 -3.435,-4.52 0.118,-15.852 0.058,-31.706 0.058,-47.56 m -100.349,-21.974 c 0.014,0 0.027,0 0.041,0 0,10.358 0.007,20.716 -0.004,31.074 -0.005,3.881 -0.004,3.842 -3.5,1.882 -7.623,-4.273 -14.798,-9.228 -21.962,-14.209 -1.517,-1.055 -2.05,-2.235 -2.044,-4.031 0.051,-16.099 0.08,-32.199 -0.021,-48.297 -0.017,-2.643 0.859,-3.401 3.442,-3.388 17.097,0.085 34.195,0.018 51.292,0.048 1.101,0.002 2.885,-0.622 2.951,1.286 0.078,2.274 -1.911,1.482 -3.081,1.492 -7.862,0.064 -15.727,0.14 -23.586,-0.036 -2.718,-0.061 -3.652,0.58 -3.6,3.48 0.185,10.23 0.072,20.465 0.072,30.699 M -9.002,80.098 c 0,4.497 0.008,8.994 -0.002,13.49 -0.01,4.4 -0.035,4.472 -4.335,3.415 -40.811,-10.026 -77.875,-28.176 -112.405,-51.834 -1.547,-1.06 -2.027,-2.271 -1.999,-4.051 0.085,-5.37 -0.019,-10.742 0.063,-16.112 0.022,-1.415 -0.813,-3.56 0.614,-4.096 1.587,-0.594 3.094,1.182 4.57,2.048 1.076,0.632 0.761,1.753 0.769,2.712 0.028,3.373 0.111,6.749 -0.026,10.116 -0.08,1.959 0.555,3.134 2.242,4.251 7.693,5.098 15.539,9.928 23.618,14.388 19.187,10.592 39.486,18.312 60.68,23.811 2.809,0.729 3.442,0.143 3.354,-2.598 -0.165,-5.116 -0.002,-10.242 -0.068,-15.362 -0.023,-1.818 0.43,-2.372 2.376,-1.909 6.05,1.438 12.141,2.713 18.234,3.957 1.861,0.38 2.362,1.409 2.336,3.161 -0.072,4.87 -0.025,9.742 -0.021,14.613 m -82.359,-97.815 c 0,12.243 -0.007,24.486 0.008,36.729 0.002,2.01 -0.025,3.596 -2.853,2.27 -7.329,-3.438 -14.723,-6.739 -22.113,-10.044 -1.657,-0.742 -2.44,-1.736 -2.438,-3.687 0.027,-20.737 -0.009,-41.475 -0.117,-62.213 -0.012,-2.29 0.734,-3.049 3.008,-3.016 6.995,0.105 13.996,0.166 20.986,-0.039 2.886,-0.085 3.598,0.932 3.572,3.646 -0.116,12.117 -0.05,24.235 -0.053,36.354 M 35.585,7.86 c 0,16.87 0,33.739 0,50.608 0,7.533 10e-4,7.532 -7.628,6.935 -0.498,-0.039 -1,-0.042 -1.496,-0.095 C 16.405,64.25 6.417,62.734 -3.505,60.79 c -4.029,-0.79 -2,-4.003 -2.11,-6.106 -0.123,-2.373 1.932,-1.248 3.071,-1.084 5.478,0.787 5.477,0.827 5.477,-4.843 0.002,-31.615 0.055,-63.23 -0.076,-94.843 -0.014,-3.472 0.977,-4.42 4.389,-4.314 7.989,0.249 15.996,0.231 23.987,0.002 3.334,-0.095 4.475,0.714 4.438,4.277 -0.187,17.992 -0.086,35.987 -0.086,53.981 M -34.846,-2.141 c 0,16.994 10e-4,33.989 -0.001,50.983 -10e-4,5.041 0,5.016 -4.893,3.679 -26.18,-7.156 -51.421,-16.706 -75.526,-29.249 -2.807,-1.461 -3.579,-3.138 -3.539,-6.082 0.042,-3.103 0.867,-3.209 3.429,-2.02 7.45,3.46 15.011,6.681 22.541,9.966 4.323,1.886 4.341,1.861 4.341,-3.048 0.003,-25.242 0.045,-50.483 -0.055,-75.724 -0.011,-2.972 0.628,-4.131 3.892,-4.096 15.368,0.163 30.739,0.145 46.108,-0.008 3.054,-0.031 3.777,0.988 3.758,3.867 -0.113,17.243 -0.056,34.488 -0.055,51.732 M -122.06,19.11 c -2.507,-0.556 -4.409,-2.251 -6.582,-3.386 -1.432,-0.748 -2.009,-0.482 -2.004,1.197 0.03,8.996 0.046,17.993 -0.017,26.99 -0.01,1.5 0.77,2.194 1.848,2.94 25.009,17.312 51.534,31.738 80.073,42.394 12.486,4.662 25.134,8.726 38.165,11.566 4.328,0.943 4.505,0.867 4.513,-3.451 0.018,-10.122 0.101,-20.244 -0.049,-30.363 -0.044,-3.021 0.872,-3.529 3.708,-2.942 12.591,2.602 25.338,4.131 38.148,5.227 2.288,0.196 2.765,-0.416 2.762,-2.528 -0.046,-39.11 -0.053,-78.221 0.011,-117.332 0.004,-2.47 -1.074,-2.898 -3.161,-2.887 -9.496,0.052 -18.994,-0.056 -28.489,0.048 -2.688,0.029 -4.411,-0.415 -3.97,-3.633 0.263,-1.921 -0.984,-2.215 -2.567,-2.208 -7.372,0.035 -14.746,0.11 -22.115,-0.039 -2.772,-0.056 -2.571,1.557 -2.569,3.374 0.016,15.244 0.008,30.489 0.008,45.733 0,18.493 0.076,36.987 -0.076,55.479 -0.025,2.984 0.975,4.293 3.761,4.765 3.068,0.52 6.085,1.359 9.159,1.834 4.193,0.647 2.929,3.835 2.663,6.097 -0.321,2.742 -2.502,1.131 -3.841,0.86 -5.257,-1.063 -10.456,-2.431 -15.733,-3.365 -2.927,-0.517 -3.658,-1.83 -3.647,-4.717 0.134,-35.61 0.065,-71.222 0.245,-106.832 0.019,-3.734 -0.82,-4.783 -4.66,-4.727 -16.116,0.235 -32.237,0.036 -48.355,0.144 -2.682,0.018 -4.061,-0.578 -3.68,-3.485 0.26,-1.978 -0.742,-2.52 -2.633,-2.516 -19.368,0.048 -38.736,0.046 -58.103,-0.017 -2.02,-0.007 -2.921,0.491 -2.914,2.689 0.058,18.118 0.053,36.236 0.001,54.354 -0.005,1.774 0.906,2.67 2.185,3.59 7.6,5.468 15.392,10.642 23.466,15.384 5.343,3.139 5.356,3.118 4.449,9.763" style="fill-opacity:1;fill-rule:nonzero;stroke:none" transform="matrix(1.3333333,0,0,-1.3333333,202.88107,135.06347)" clip-path="url(#clipPath2)" />
+            </g>
+        </svg>`;
+
+      function setGrid(rows, columns, Building) {
+        const container = document.getElementById("panel-content");
+        container.style.gridTemplateRows = `repeat(${rows}, 1fr)`;
+        container.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
+
+        // 清空容器内容
+        container.innerHTML = "";
+        // 动态生成网格项
+        // 'https://rw.jxnhu.edu.cn/images/22/06/09/15zoww82vf/flicker-1.jpg'
+        const defaultiframe = 'https://map.baidu.com/search/%E5%98%89%E5%85%B4%E5%8D%97%E6%B9%96%E5%AD%A6%E9%99%A2/@13440570.544483151,3578568.86665485,18z#panoid=09024500001505170230291675Y&panotype=street&heading=251.95&pitch=-3.45&l=13&tn=B_NORMAL_MAP&sc=0&newmap=1&shareurl=1&pid=09024500001505170230291675Y'
+        for (let i = 1; i <= Building.length; i++) {
+          const item = document.createElement("div");
+          const modalfn = `createModal('${Building[i - 1].location} — ${Building[i - 1].title}',
+          '${(Building[i - 1].url !== undefined && Building[i - 1].url !== '') ? Building[i - 1].url : 'https://www.jxnhu.edu.cn/css/B36Y9586.jpg'}',
+          '<strong>${Building[i - 1].title}</strong>是学校的重要建筑之一。<br><br><div>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${Building[i - 1].description}</div>')`;
+          if (Building[i - 1].status) {
+            item.innerHTML = `<div class="card" onclick="${modalfn}">
+                    <div class="top-section">
+                        <div class="location">${Building[i - 1].location}</div>
+                        <div class="statusChecked">已打卡</div>
+                    </div >
+                    <div class="title">${Building[i - 1].title}</div>
+                    <!--<div class="detail-btn">查看详情</div>-->
+                    <div class="GateIcon">
+                        ${svg}
+                    </div>
+                    </div > `;
+          } else {
+            item.innerHTML = `<div class="card" onclick="${modalfn}">
+                    <div class="top-section">
+                        <div class="location">${Building[i - 1].location}</div>
+                        <div class="status">未打卡</div>
+                    </div>
+                    <div class="title">${Building[i - 1].title}</div>
+                    <!--< div class="detail-btn"> 查看详情</div> -->
+                    <div class="GateIcon">
+                        ${svg}
+                    </div>
+                    </div >`;
+          }
+          container.appendChild(item);
+        }
+      }
+      // 修改: 添加id字段用于匹配hash值
+      Buildings = [
+  { "id": "jy", "location": "教学楼", "status": 0, "title": "教一", "url":"https://workspace-zb-cdn.quark.cn/d7c9725abe2249f4bdf5251400f50feb%2Fo%2F1773607088333.png?auth_key=1776200040-0-0-1d68e650b4e64d93bd41c35671feb33d","description": "学校最早建成的核心公共教学楼之一，主要承担全校通识教育课程及大一基础学科教学任务，配备标准化多媒体教室，是新生入学接触最频繁的教学场所。" },
+  { "id": "jeA", "location": "教学楼", "status": 0, "title": "教二A","url":"https://workspace-zb-cdn.quark.cn/3bcfd27b88ba4c53ac55a72526f82102%2Fo%2F1773608845383.png?auth_key=1776204060-0-0-424f994e1b58b49a16c0aeb3d202cc85", "description": "教二楼群东侧主体建筑，拥有大量阶梯教室与研讨室，主要满足规模化公共课教学需求，同时承载部分专业课程的日常授课功能。" },
+  { "id": "yrg", "location": "教学楼", "status": 0, "title": "红船精神育人馆","url":"https://workspace-zb-cdn.quark.cn/a4a8bd7347854f8d9f0fe301ee680724%2Fo%2F1773608561335.jpg?auth_key=1776204540-0-0-50e801cd7bf875936d9d22e69af0b6af", "description": "学校依托嘉兴南湖‘红船起航地’独特红色资源打造的标志性思政教育场馆，集党史陈列、情景教学、专题研学于一体，是开展‘红船精神’进校园、落实立德树人根本任务的核心阵地。" },
+  { "id": "jeB", "location": "教学楼", "status": 0, "title": "教二B", "url":"https://free.picui.cn/free/2026/03/16/69b707389f040.png","description": "教二楼群西侧主体建筑，与教二A共同构成学校最大的公共教学区，内部设施现代化，常用于安排各类选修课及跨学院共享课程。" },
+  { "id": "drbgt", "location": "教学楼", "status": 0, "title": "第二报告厅", "url":"https://workspace-zb-cdn.quark.cn/9d7efdbad2be457ba843c94b36a1d4c4%2Fo%2F1773606212440.jpg?auth_key=1776203460-0-0-030064b2e45a0ff0e3d68ce6cb6a6e3f","description": "校内重要的大型学术交流活动中心，配备先进音视频设备，常举办校级学术讲座、毕业论文答辩、大型会议及文艺汇演等活动。" },
+  { "id": "xzl", "location": "教学楼", "status": 0, "title": "行政楼(第一报告厅)", "url":"https://workspace-zb-cdn.quark.cn/b4a26c07314a42e8862854b9c1445604%2Fo%2F1773609048649.png?auth_key=1776203460-0-0-fe85be9ee0235973cadcb81f6b5aa72f" ,"description": "学校党政管理机构及职能部门办公所在地，包括校长办公室、教务处、学工部等，是统筹全校行政管理、服务师生办事的综合枢纽。" },
+  { "id": "djl", "location": "教学楼", "status": 0, "title": "电教楼","url":"https://workspace-zb-cdn.quark.cn/891d6aa4787c401aa75ccafc3b01055f%2Fo%2F1773609796397.png?auth_key=1776203580-0-0-ce7f47318bc6c5455b31433e4d9db3ba", "description": "专注于现代教育技术与信息化教学的楼宇，内含计算机公共机房、语音实验室、录音棚及多媒体制作中心，支撑全校计算机基础课及数字化教学资源建设。" },
+  { "id": "chy", "location": "食堂", "status": 0, "title": "春华苑","url":"https://workspace-zb-cdn.quark.cn/4209de2bfe6944a9abb5df9e9178e960%2Fo%2F1773609715747.png?auth_key=1776203220-0-0-c7026def1fd932d71641e6314ab02102", "description": "校内主要学生食堂之一，位于生活区核心位置，提供涵盖各地风味的多样化餐饮窗口，并设有清真专区，满足广大师生日常用餐及社交需求。" },
+  { "id": "jhy", "location": "食堂", "status": 0, "title": "嘉禾苑","url":"https://free.picui.cn/free/2026/03/16/69b707389e407.png", "description": "另一座大型现代化学生食堂，以环境优美、菜品丰富著称，除基本伙食外还设有特色风味档口和休闲就餐区，是师生课后交流的重要场所。" },
+  { "id": "tsg", "location": "校园服务", "status": 0, "title": "图书馆","url":"https://free.picui.cn/free/2026/03/16/69b70736d1e77.jpg", "description": "校园知识文化中心与地标性建筑，馆藏纸质图书95余万册及大量电子资源，设有自习大厅、研讨间、文献检索区及校史馆，为师生提供全方位的学术支持与阅读空间。" },
+  { "id": "tyg", "location": "校园服务", "status": 0, "title": "体育馆","url":"https://www.jxnhu.edu.cn/yuanlai/laisanhang.jpg", "description": "室内综合运动场馆，内设篮球场、羽毛球场、乒乓球室及健身房，不仅承担体育专业课程教学，也是师生日常健身、举办校级体育赛事及大型集会的主要场地。" },
+  { "id": "qhl", "location": "校园服务", "status": 0, "title": "启航楼", "url":"https://workspace-zb-cdn.quark.cn/d454c9d344904c5dbabc7d8031549be5%2Fo%2F1773607972084.png?auth_key=1776201000-0-0-469c17f3a88e7e386a082145caebfb14","description": "寓意‘扬帆启航’的多功能服务楼宇，常作为大学生创新创业孵化基地、就业指导中心或学生活动中心使用，支持各类社团活动与双创项目落地。" },
+  { "id": "txl", "location": "校园服务", "status": 0, "title": "团学楼", "url":"https://free.picui.cn/free/2026/03/16/69b70cba9c0ea.png","description": "校团委、学生会及各学生社团的办公与活动大本营，设有排练厅、会议室及活动室，是组织开展校园文化活动的核心阵地。" },
+  { "id": "zyyz", "location": "校园服务", "status": 0, "title": "中邮驿站", "url":"https://workspace-zb-cdn.quark.cn/0f04bf2886284a7eb8a2b577cbb9c9ea%2Fo%2F1773607756384.png?auth_key=1776203280-0-0-454ae77e5d141c70d85419b1151f000c","description": "校园智慧物流服务中心，由中国邮政运营，提供快递收发、包裹寄取、邮政金融及文创产品销售等一站式服务，解决师生‘最后一公里’物流需求。" },
+  { "id": "tjb", "location": "校园服务", "status": 0, "title": "体军部","url":"https://workspace-zb-cdn.quark.cn/a8e00f1f65754608ae5a436d1d3ddfc9%2Fo%2F1773608648040.png?auth_key=1805147400-0-0-dc7d68a9c3b97fa285a97614f3cf3e85", "description": "体育与军事教研室所在地，负责全校体育课程教学、运动队训练、国防教育课程及每年新生军训的组织与实施工作。" },
+  { "id": "rwyys", "location": "学院楼", "status": 0, "title": "人文与艺术学院", "url":"https://workspace-zb-cdn.quark.cn/7f7c5dd4ad944d55bfd1afb7d39f2772%2Fo%2F1773607589299.jpg?auth_key=1776200820-0-0-bef4a00e10d7e93575345759c4a1b5fb","description": "人文与艺术学院专属教学科研楼，涵盖法学、汉语言文学、英语、日语及艺术设计等专业，设有模拟法庭、语言实训室及艺术创作工作室，注重人文素养与审美能力培养。" },
+  { "id": "xdjr", "location": "学院楼", "status": 0, "title": "现代金融学院", "url":"https://workspace-zb-cdn.quark.cn/b6ab7731121b440c92b3b0d16f20de0a%2Fo%2F1773610096625.png?auth_key=1776206040-0-0-8fb0dc5af335659b7aaaca01245600d3","description": "现代金融学院大楼，聚焦金融学、国际经济与贸易、经济学等优势专业，建有金融仿真模拟实验室、ERP沙盘实训室，致力于培养适应数字经济时代的应用型金融人才。" },
+  { "id": "smgl", "location": "学院楼", "status": 0, "title": "商贸管理学院", "url":"https://workspace-zb-cdn.quark.cn/b6ab7731121b440c92b3b0d16f20de0a%2Fo%2F1773610096625.png?auth_key=1776206040-0-0-8fb0dc5af335659b7aaaca01245600d3","description": "商贸管理学院所在地，涵盖会计、工商管理、市场营销、跨境电商等热门专业，拥有省级经济管理实验中心，强调产教融合与商业实战能力训练。" },
+  { "id": "jdgc", "location": "学院楼", "status": 0, "title": "机电工程学院", "url":"https://workspace-zb-cdn.quark.cn/7f7c5dd4ad944d55bfd1afb7d39f2772%2Fo%2F1773607589299.jpg?auth_key=1776200820-0-0-bef4a00e10d7e93575345759c4a1b5fb","description": "机电工程学院大楼，设有机械设计、电气自动化、智能制造等专业，配备先进的数控加工中心、机器人实验室及智能制造工程实验中心，是培养高素质工科人才的基地。" },
+  { "id": "xxgc", "location": "学院楼", "status": 0, "title": "信息工程学院", "url":"https://workspace-zb-cdn.quark.cn/7f7c5dd4ad944d55bfd1afb7d39f2772%2Fo%2F1773607589299.jpg?auth_key=1776200820-0-0-bef4a00e10d7e93575345759c4a1b5fb","description": "信息工程学院驻地，聚焦计算机科学与技术、人工智能、大数据、网络工程等专业，拥有高性能计算中心及多个专业实验室，对接长三角数字经济发展需求。" },
+  { "id": "sssj", "location": "学院楼", "status": 0, "title": "时尚设计学院", "url":"https://workspace-zb-cdn.quark.cn/7f7c5dd4ad944d55bfd1afb7d39f2772%2Fo%2F1773607589299.jpg?auth_key=1776200820-0-0-bef4a00e10d7e93575345759c4a1b5fb","description": "时尚设计学院专属空间，涵盖服装设计与工程、纺织工程、工业设计、数字媒体艺术等专业，设有服装工艺室、面料实验室及数字设计工作室， recently成立了时尚设计现代产业学院。" },
+  { "id": "jzgc", "location": "学院楼", "status": 0, "title": "建筑工程学院", "url":"https://workspace-zb-cdn.quark.cn/7f7c5dd4ad944d55bfd1afb7d39f2772%2Fo%2F1773607589299.jpg?auth_key=1776200820-0-0-bef4a00e10d7e93575345759c4a1b5fb","description": "建筑工程学院大楼，服务于土木工程、工程管理、工程造价等专业，建有智慧营造实训中心及BIM技术中心，强化学生在建筑行业的实践操作与项目管理能力。" },
+  { "id": "xclgc", "location": "学院楼", "status": 0, "title": "新材料工程学院", "url":"https://workspace-zb-cdn.quark.cn/7f7c5dd4ad944d55bfd1afb7d39f2772%2Fo%2F1773607589299.jpg?auth_key=1776200820-0-0-bef4a00e10d7e93575345759c4a1b5fb","description": "新材料工程学院科研教学中心，涵盖化学工程、生物工程、高分子材料、环境工程等专业，近期获批‘新能源材料与器件’新专业，专注光伏、氢能等前沿领域研究。" },
+  { "id": "mkszy", "location": "学院楼", "status": 0, "title": "马克思主义学院", "url":"https://ts3.tc.mm.bing.net/th/id/OIP-C.GQEcZ0rgb5YHbtE6GHGYwQHaFH?rs=1&pid=ImgDetMain&o=7&rm=3","description": "马克思主义学院独立楼宇，承担全校思想政治理论课教学任务，设有思政课虚拟仿真实验室，是开展理论研究、红色文化传承及‘大思政课’建设的重要平台。" },
+  { "id": "jxjy", "location": "学院楼", "status": 0, "title": "继续教育学院", "url": "https://workspace-zb-cdn.quark.cn/45b3f2545f2248d185ec4790bf08353f%2Fo%2F1773611189014.png?auth_key=1776207000-0-0-2cc2da9d5379d7e73e02aca9a493c818", "description": "继续教育学院专属办公与教学场所，负责成人高等教育、自学考试助学、职业技能培训及社会服务工作。学院设有专用多媒体教室、远程直播课堂及考务中心，致力于构建服务全民终身学习的教育体系，是连接学校与社会、促进学历提升与技能赋能的重要窗口。" }
+];
+      const rearrangeByIndexParity = (arr) => {
+        const oddIndexed = []; // 索引为奇数的项（1,3,5...）
+        const evenIndexed = []; // 索引为偶数的项（0,2,4...）
+
+        for (let i = 0; i < arr.length; i++) {
+          if (i % 2 === 1) {
+            evenIndexed.push(arr[i]);
+          } else {
+            oddIndexed.push(arr[i]);
+          }
+        }
+
+        return [...oddIndexed, ...evenIndexed];
+      };
+      // 初始化为两行两列
+      setGrid(
+        2,
+        Math.round(Buildings.length / 2),
+        rearrangeByIndexParity(Buildings),
+      );
+    </script>
+    <script>
+      const checkInCard = document.getElementById("checkInCard");
+      const checkInBtn = document.getElementById("checkInLocateBtn");
+      const checkInStamp = document.getElementById("checkInStamp");
+      const checkInLocName = document.getElementById("checkInLocName");
+      //   const checkInStampDate = document.getElementById("checkInStampDate");
+      const checkInLocSub = document.querySelector(".location-sub"); // 新增
+      // 新增定时器变量
+      let checkInRemoveTimer = null;
+      checkInLocName.textContent = "嘉兴南湖学院";
+      //   checkInLocSub.textContent = "📍 嘉兴市南湖区 | 刚刚";
+      function checkIn(Buildings) {
+        const hash = window.location.hash.substring(1);
+        if (hash) {
+          // 查找匹配的建筑
+          const buildingIndex = Buildings.findIndex(
+            (building) => building.id === hash,
+          );
+          if (buildingIndex !== -1 && Buildings[buildingIndex].status == 0) {
+            checkInCurrentLocation = Buildings[buildingIndex].title;
+            checkInLocName.textContent = checkInCurrentLocation;
+            console.log("checkInCurrentLocation", checkInCurrentLocation);
+            checkInCard.style.display = "flex";
+          }
+        }
+      }
+
+      let checkInIsChecking = false;
+
+      const now = new Date();
+      const dateStr = `${now.getFullYear()}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getDate()).padStart(2, "0")}`;
+      checkInStampDate.textContent = dateStr;
+
+      checkInBtn.addEventListener("click", () => {
+        if (checkInIsChecking || checkInCard.classList.contains("success"))
+          return;
+        checkInStartAnimation();
+        checkInRemoveTimer = setTimeout(() => {
+          checkInCard.remove();
+        }, 6000);
+      });
+
+      function checkInStartAnimation() {
+        checkInIsChecking = true;
+
+        checkInBtn.classList.remove("active");
+        checkInBtn.style.transform = "scale(0.9)";
+        checkInBtn.querySelector("svg").style.fill = "#2ecc71";
+
+        setTimeout(() => {
+          checkInCard.style.transform = "scale(1.05)";
+
+          setTimeout(() => {
+            checkInStamp.classList.add("show");
+            checkInCard.classList.add("success");
+            checkInPlaySound();
+            checkInCreateConfetti();
+            checkInCard.style.transform = "scale(1)";
+          }, 200);
+        }, 600);
+      }
+
+      function checkInReset() {
+        // 清除自动移除定时器
+        if (checkInRemoveTimer) {
+          clearTimeout(checkInRemoveTimer);
+          checkInRemoveTimer = null;
+        }
+
+        checkInCard.classList.remove("success");
+        checkInStamp.classList.remove("show");
+        checkInBtn.style.transform = "scale(1)";
+        checkInBtn.querySelector("svg").style.fill = "#3498db";
+
+        document
+          .querySelectorAll(".confetti-piece")
+          .forEach((el) => el.remove());
+
+        setTimeout(() => {
+          checkInBtn.classList.add("active");
+          checkInIsChecking = false;
+        }, 300);
+      }
+
+      function checkInPlaySound() {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) return;
+
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+
+          osc.type = "square";
+          osc.frequency.setValueAtTime(150, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(40, ctx.currentTime + 0.1);
+
+          gain.gain.setValueAtTime(0.1, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.1);
+
+          osc.start();
+          osc.stop(ctx.currentTime + 0.1);
+        } catch (e) {
+          console.log("Audio not supported or blocked");
+        }
+      }
+
+      function checkInCreateConfetti() {
+        const rect = checkInCard.getBoundingClientRect();
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        for (let i = 0; i < 60; i++) {
+          const piece = document.createElement("div");
+          piece.classList.add("confetti-piece");
+
+          const colors = ["#FFD700", "#FFA500", "#FF8C00", "#FFFACD"];
+          piece.style.backgroundColor =
+            colors[Math.floor(Math.random() * colors.length)];
+
+          piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+          piece.style.left = centerX + (Math.random() - 0.5) * 100 + "px";
+          piece.style.top = centerY + (Math.random() - 0.5) * 100 + "px";
+
+          document.body.appendChild(piece);
+
+          const angle = Math.random() * Math.PI * 2;
+          const velocity = 10 + Math.random() * 15;
+          const tx = Math.cos(angle) * velocity * 15;
+          const ty = Math.sin(angle) * velocity * 15 + 100;
+
+          const anim = piece.animate(
+            [
+              { transform: `translate(0,0) rotate(0deg)`, opacity: 1 },
+              {
+                transform: `translate(${tx}px, ${ty}px) rotate(${Math.random() * 720}deg)`,
+                opacity: 0,
+              },
+            ],
+            {
+              duration: 1000 + Math.random() * 1000,
+              easing: "cubic-bezier(0.25, 0.46, 0.45, 0.94)",
+              fill: "forwards",
+            },
+          );
+
+          anim.onfinish = () => piece.remove();
+        }
+      }
+    </script>
+    <script>
+      // 战争迷雾类
+      class WarFogMap {
+        constructor(canvasId, options = {}) {
+          this.canvas = document.getElementById(canvasId);
+          this.ctx = this.canvas.getContext("2d");
+
+          // 设置默认选项
+          this.options = {
+            userColor: options.userColor || "red",
+            userStrokeColor: options.userStrokeColor || "white",
+            fogColor: options.fogColor || "rgba(0, 0, 0, 0.8)",
+            revealRadius: options.revealRadius || 30,
+            ...options,
+          };
+
+          // 创建遮罩画布
+          this.maskCanvas = document.createElement("canvas");
+          this.maskCanvas.width = this.canvas.width;
+          this.maskCanvas.height = this.canvas.height;
+          this.maskCtx = this.maskCanvas.getContext("2d");
+
+          // 用户位置
+          this.userX = this.canvas.width / 2;
+          this.userY = this.canvas.height / 2;
+
+          // GPS边界坐标
+          this.gpsBounds = {
+            topLeft: { lng: 120.72584, lat: 30.749314 },
+            topRight: { lng: 120.733207, lat: 30.749314 },
+            bottomLeft: { lng: 120.72584, lat: 30.741963 },
+            bottomRight: { lng: 120.733207, lat: 30.741963 },
+          };
+
+          // 缩放和平移相关属性
+          this.scale = 1;
+          this.translateX = 0;
+          this.translateY = 0;
+          this.isDragging = false;
+          this.lastX = 0;
+          this.lastY = 0;
+          this.lastTouches = [];
+
+          // 初始化
+          this.init();
+
+          // 加载背景图片
+          this.backgroundImage = new Image();
+          this.backgroundImage.src =
+            "https://free.picui.cn/free/2026/03/16/69b6dfccd486a.jpg";
+          this.backgroundImage.onload = () => {
+            this.backgroundLoaded = true;
+          };
+
+          // 绑定触摸事件
+          this.bindTouchEvents();
+        }
+
+        // 初始化迷雾
+        init() {
+          this.resetFog();
+          // 尝试从localStorage恢复迷雾状态
+          this.restoreFogState();
+          this.updateDisplay();
+        }
+
+        // 重置迷雾为完全覆盖状态
+        resetFog() {
+          this.maskCtx.fillStyle = "black";
+          this.maskCtx.fillRect(
+            0,
+            0,
+            this.maskCanvas.width,
+            this.maskCanvas.height,
+          );
+        }
+
+        // 揭示指定区域（清除迷雾）
+        revealArea(x, y, radius = this.options.revealRadius) {
+          this.maskCtx.globalCompositeOperation = "destination-out";
+          this.maskCtx.beginPath();
+          this.maskCtx.arc(x, y, radius, 0, Math.PI * 2);
+          this.maskCtx.fill();
+          this.maskCtx.globalCompositeOperation = "source-over";
+          // 保存迷雾状态到localStorage
+          this.saveFogState();
+        }
+
+        // 设置用户位置
+        setUserPosition(x, y) {
+          this.userX = x;
+          this.userY = y;
+          this.revealArea(x, y);
+        }
+
+        // 绘制用户位置
+        drawUserPosition() {
+          this.ctx.beginPath();
+          this.ctx.arc(this.userX, this.userY, 5, 0, Math.PI * 2);
+          this.ctx.fillStyle = this.options.userColor;
+          this.ctx.fill();
+          this.ctx.strokeStyle = this.options.userStrokeColor;
+          this.ctx.lineWidth = 1;
+          this.ctx.stroke();
+        }
+
+        // 更新显示
+        updateDisplay() {
+          // 清除画布
+          this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+          // 保存当前上下文状态
+          this.ctx.save();
+
+          // 应用缩放和平移变换
+          this.ctx.translate(this.translateX, this.translateY);
+          this.ctx.scale(this.scale, this.scale);
+
+          // 绘制背景图片
+          if (this.backgroundLoaded && this.backgroundImage) {
+            // 使用drawImage的五参数版本，保持图片比例正确
+            const imgAspect =
+              this.backgroundImage.width / this.backgroundImage.height;
+            const canvasAspect = this.canvas.width / this.canvas.height;
+
+            let renderWidth,
+              renderHeight,
+              offsetX = 0,
+              offsetY = 0;
+
+            if (imgAspect > canvasAspect) {
+              // 图片更宽，以高度为准
+              renderHeight = this.canvas.height;
+              renderWidth =
+                this.backgroundImage.width *
+                (renderHeight / this.backgroundImage.height);
+              offsetX = (this.canvas.width - renderWidth) / 2;
+            } else {
+              // 图片更高，以宽度为准
+              renderWidth = this.canvas.width;
+              renderHeight =
+                this.backgroundImage.height *
+                (renderWidth / this.backgroundImage.width);
+              offsetY = (this.canvas.height - renderHeight) / 2;
+            }
+
+            this.ctx.drawImage(
+              this.backgroundImage,
+              offsetX,
+              offsetY,
+              renderWidth,
+              renderHeight,
+            );
+          } else {
+            // 如果图片未加载完成，先用白色填充
+            this.ctx.fillStyle = "#ffffff";
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+          }
+
+          // 绘制迷雾遮罩
+          this.ctx.drawImage(this.maskCanvas, 0, 0);
+
+          // 绘制用户位置
+          this.drawUserPosition();
+
+          // 恢复上下文状态
+          this.ctx.restore();
+        }
+
+        // 获取用户位置
+        getUserPosition() {
+          return { x: this.userX, y: this.userY };
+        }
+
+        // 将GPS坐标转换为画布坐标
+        gpsToCanvas(gpsLat, gpsLng) {
+          const bounds = this.gpsBounds;
+
+          // 计算经度比例 (x轴)
+          const lngRatio =
+            (gpsLng - bounds.topLeft.lng) /
+            (bounds.topRight.lng - bounds.topLeft.lng);
+
+          // 计算纬度比例 (y轴) - 注意纬度是从上到下递减的
+          const latRatio =
+            (bounds.topLeft.lat - gpsLat) /
+            (bounds.topLeft.lat - bounds.bottomLeft.lat);
+
+          // 转换为画布坐标
+          const x = lngRatio * this.canvas.width;
+          const y = latRatio * this.canvas.height;
+
+          return { x, y };
+        }
+
+        // 将画布坐标转换为GPS坐标
+        canvasToGps(x, y) {
+          const bounds = this.gpsBounds;
+
+          // 计算画布上的比例
+          const lngRatio = x / this.canvas.width;
+          const latRatio = y / this.canvas.height;
+
+          // 转换为GPS坐标
+          const lng =
+            bounds.topLeft.lng +
+            lngRatio * (bounds.topRight.lng - bounds.topLeft.lng);
+          const lat =
+            bounds.topLeft.lat -
+            latRatio * (bounds.topLeft.lat - bounds.bottomLeft.lat);
+
+          return { lat, lng };
+        }
+
+        // 新增方法：保存迷雾状态到localStorage
+        saveFogState() {
+          try {
+            const fogDataUrl = this.maskCanvas.toDataURL();
+            localStorage.setItem("warFogState", fogDataUrl);
+          } catch (e) {
+            console.warn("无法保存迷雾状态到localStorage:", e);
+          }
+        }
+
+        // 新增方法：从localStorage恢复迷雾状态
+        restoreFogState() {
+          try {
+            const savedFogDataUrl = localStorage.getItem("warFogState");
+            if (savedFogDataUrl) {
+              const img = new Image();
+              img.onload = () => {
+                this.maskCtx.drawImage(img, 0, 0);
+                this.updateDisplay();
+              };
+              img.src = savedFogDataUrl;
+            }
+          } catch (e) {
+            console.warn("无法从localStorage恢复迷雾状态:", e);
+          }
+        }
+
+        // 新增清除迷雾的方法
+        clearFog() {
+          // 使用正确比例绘制背景图片
+          if (this.backgroundLoaded && this.backgroundImage) {
+            const imgAspect =
+              this.backgroundImage.width / this.backgroundImage.height;
+            const canvasAspect = this.canvas.width / this.canvas.height;
+
+            let renderWidth,
+              renderHeight,
+              offsetX = 0,
+              offsetY = 0;
+
+            if (imgAspect > canvasAspect) {
+              renderHeight = this.canvas.height;
+              renderWidth =
+                this.backgroundImage.width *
+                (renderHeight / this.backgroundImage.height);
+              offsetX = (this.canvas.width - renderWidth) / 2;
+            } else {
+              renderWidth = this.canvas.width;
+              renderHeight =
+                this.backgroundImage.height *
+                (renderWidth / this.backgroundImage.width);
+              offsetY = (this.canvas.height - renderHeight) / 2;
+            }
+
+            this.ctx.drawImage(
+              this.backgroundImage,
+              offsetX,
+              offsetY,
+              renderWidth,
+              renderHeight,
+            );
+          }
+          // 清除所有迷雾并保存状态
+          this.maskCtx.clearRect(
+            0,
+            0,
+            this.maskCanvas.width,
+            this.maskCanvas.height,
+          );
+          this.saveFogState();
+        }
+
+        // 新增方法：将用户位置居中显示
+        centerOnUser() {
+          // 计算需要的平移量，使得用户位置位于画布中心
+          const centerX = this.canvas.width / 2;
+          const centerY = this.canvas.height / 2;
+
+          // 更新translate值使得userX, userY位于画布中心
+          this.translateX = centerX - this.userX * this.scale;
+          this.translateY = centerY - this.userY * this.scale;
+          this.updateDisplay();
+        }
+
+        // 绑定触摸事件
+        bindTouchEvents() {
+          // 鼠标事件
+          this.canvas.addEventListener("mousedown", (e) =>
+            this.handleMouseDown(e),
+          );
+          this.canvas.addEventListener("mousemove", (e) =>
+            this.handleMouseMove(e),
+          );
+          this.canvas.addEventListener("mouseup", (e) => this.handleMouseUp(e));
+          this.canvas.addEventListener("mouseleave", (e) =>
+            this.handleMouseUp(e),
+          );
+
+          // 触摸事件
+          this.canvas.addEventListener("touchstart", (e) =>
+            this.handleTouchStart(e),
+          );
+          this.canvas.addEventListener("touchmove", (e) =>
+            this.handleTouchMove(e),
+          );
+          this.canvas.addEventListener("touchend", (e) =>
+            this.handleTouchEnd(e),
+          );
+          this.canvas.addEventListener("touchcancel", (e) =>
+            this.handleTouchEnd(e),
+          );
+
+          // 滚轮事件（用于缩放）
+          this.canvas.addEventListener("wheel", (e) => this.handleWheel(e));
+        }
+
+        // 鼠标按下事件
+        handleMouseDown(e) {
+          this.isDragging = true;
+          this.lastX = e.clientX;
+          this.lastY = e.clientY;
+          this.canvas.style.cursor = "grabbing";
+        }
+
+        // 鼠标移动事件
+        handleMouseMove(e) {
+          if (this.isDragging) {
+            const deltaX = e.clientX - this.lastX;
+            const deltaY = e.clientY - this.lastY;
+
+            this.translateX += deltaX;
+            this.translateY += deltaY;
+
+            this.lastX = e.clientX;
+            this.lastY = e.clientY;
+
+            this.updateDisplay();
+          }
+        }
+
+        // 鼠标释放事件
+        handleMouseUp(e) {
+          this.isDragging = false;
+          this.canvas.style.cursor = "default";
+        }
+
+        // 触摸开始事件
+        handleTouchStart(e) {
+          e.preventDefault();
+          this.lastTouches = Array.from(e.touches);
+
+          if (e.touches.length === 1) {
+            this.lastX = e.touches[0].clientX;
+            this.lastY = e.touches[0].clientY;
+          }
+        }
+
+        // 触摸移动事件
+        handleTouchMove(e) {
+          e.preventDefault();
+
+          if (e.touches.length === 1) {
+            // 单指拖动
+            const deltaX = e.touches[0].clientX - this.lastX;
+            const deltaY = e.touches[0].clientY - this.lastY;
+
+            this.translateX += deltaX;
+            this.translateY += deltaY;
+
+            this.lastX = e.touches[0].clientX;
+            this.lastY = e.touches[0].clientY;
+
+            this.updateDisplay();
+          } else if (e.touches.length === 2) {
+            // 双指缩放
+            const touch1 = e.touches[0];
+            const touch2 = e.touches[1];
+
+            // 计算当前双指距离
+            const currentDistance = Math.sqrt(
+              Math.pow(touch2.clientX - touch1.clientX, 2) +
+                Math.pow(touch2.clientY - touch1.clientY, 2),
+            );
+
+            // 计算上一次双指距离
+            const lastTouch1 = this.lastTouches[0];
+            const lastTouch2 = this.lastTouches[1];
+            const lastDistance = Math.sqrt(
+              Math.pow(lastTouch2.clientX - lastTouch1.clientX, 2) +
+                Math.pow(lastTouch2.clientY - lastTouch1.clientY, 2),
+            );
+
+            // 计算缩放比例
+            if (lastDistance > 0) {
+              const scaleChange = currentDistance / lastDistance;
+              const newScale = this.scale * scaleChange;
+
+              // 限制缩放范围
+              if (newScale > 0.5 && newScale < 5) {
+                this.scale = newScale;
+
+                // 计算中心点以实现围绕中心缩放
+                const centerX = (touch1.clientX + touch2.clientX) / 2;
+                const centerY = (touch1.clientY + touch2.clientY) / 2;
+
+                // 调整平移以实现围绕中心点缩放
+                this.translateX =
+                  centerX - (centerX - this.translateX) * scaleChange;
+                this.translateY =
+                  centerY - (centerY - this.translateY) * scaleChange;
+
+                this.updateDisplay();
+              }
+            }
+
+            this.lastTouches = Array.from(e.touches);
+          }
+        }
+
+        // 触摸结束事件
+        handleTouchEnd(e) {
+          e.preventDefault();
+          this.lastTouches = Array.from(e.touches);
+        }
+
+        // 滚轮事件（鼠标缩放）
+        handleWheel(e) {
+          e.preventDefault();
+
+          // 获取鼠标在画布上的位置
+          const rect = this.canvas.getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+
+          // 计算缩放比例
+          const zoomIntensity = 0.1;
+          const scaleChange =
+            e.deltaY < 0 ? 1 + zoomIntensity : 1 - zoomIntensity;
+          const newScale = this.scale * scaleChange;
+
+          // 限制缩放范围
+          if (newScale > 0.5 && newScale < 5) {
+            this.scale = newScale;
+
+            // 调整平移以实现围绕鼠标位置缩放
+            this.translateX = mouseX - (mouseX - this.translateX) * scaleChange;
+            this.translateY = mouseY - (mouseY - this.translateY) * scaleChange;
+
+            this.updateDisplay();
+          }
+        }
+      }
+
+      class GeolocationService {
+        constructor() {
+          this.position = null;
+        }
+
+        getLocation() {
+          return new Promise((resolve, reject) => {
+            // 使用高德地图API获取位置
+            AMap.plugin("AMap.Geolocation", () => {
+              var geolocation = new AMap.Geolocation({
+                enableHighAccuracy: true, // 是否使用高精度定位
+                timeout: 10000, // 超过10秒后停止定位
+                maximumAge: 0, // 定位结果缓存0毫秒
+                convert: true, // 自动偏移坐标，偏移后的坐标为高德坐标
+                showButton: true, // 显示定位按钮
+                buttonPosition: "LB", // 定位按钮停靠位置
+                buttonOffset: new AMap.Pixel(10, 20), // 定位按钮与设置的停靠位置的偏移量
+                showMarker: false, // 定位成功后在定位到的位置显示点标记
+                showCircle: false, // 定位成功后用圆圈表示定位精度范围
+                panToLocation: false, // 定位成功后将定位到的位置作为地图中心点
+                zoomToAccuracy: false, // 定位成功后调整地图视野范围使定位位置及精度范围视野内可见
+              });
+
+              geolocation.getCurrentPosition((status, result) => {
+                if (status === "complete") {
+                  this.parsePosition(result);
+                  resolve(this.position);
+                } else {
+                  reject(result.message);
+                }
+              });
+            });
+          });
+        }
+
+        parsePosition(result) {
+          // 解析高德地图返回的位置信息
+          this.position = {
+            latitude: result.position.lat,
+            longitude: result.position.lng,
+            accuracy: result.accuracy || 10,
+            address: result.address, // 地址信息
+            timestamp: new Date().toLocaleString(),
+          };
+        }
+
+        getErrorDescription(error) {
+          return error;
+        }
+      }
+
+      // 获取DOM元素
+      const canvas = document.getElementById("mapCanvas");
+      const locateBtn = document.getElementById("locateBtn");
+      const clearFogBtn = document.getElementById("clearFogBtn"); // 添加对清除迷雾按钮的引用
+      const statusText = document.getElementById("statusText");
+      const coordinatesDisplay = document.getElementById("coordinatesDisplay");
+
+      // 创建战争迷雾地图实例
+      let warFogMap = new WarFogMap("mapCanvas");
+      let watchId = null;
+      let geolocation = null; // 高德地图定位对象
+
+      // 处理位置更新
+      function handlePositionUpdate(position) {
+        // 获取真实的GPS坐标
+        const latitude = position.position.lat;
+        const longitude = position.position.lng;
+        const accuracy = position.accuracy || 10;
+
+        // 将GPS坐标转换为画布坐标
+        const canvasPos = warFogMap.gpsToCanvas(latitude, longitude);
+        let newX = canvasPos.x;
+        let newY = canvasPos.y;
+
+        // 确保坐标在画布范围内
+        newX = Math.min(canvas.width - 5, Math.max(5, newX));
+        newY = Math.min(canvas.height - 5, Math.max(5, newY));
+
+        // 设置新位置并更新显示
+        warFogMap.setUserPosition(newX, newY);
+
+        // 确保在设置新位置后更新显示
+        warFogMap.updateDisplay();
+        warFogMap.centerOnUser();
+
+        statusText.textContent = `位置已更新 - 精度: ${Math.round(accuracy)} m - ${latitude.toFixed(6)}, ${longitude.toFixed(6)} `;
+
+        // 添加位置信息打印到控制台
+        console.log("位置更新:", {
+          latitude: latitude.toFixed(6),
+          longitude: longitude.toFixed(6),
+          accuracy: Math.round(accuracy),
+          canvasX: newX.toFixed(2),
+          canvasY: newY.toFixed(2),
+          timestamp: new Date().toLocaleTimeString(),
+        });
+      }
+
+      // 获取用户位置
+      function getUserLocation() {
+        statusText.textContent = "正在获取位置...";
+
+        // 直接启动持续定位监听，而不等待初始位置获取
+        startContinuousLocationTracking();
+
+        // 同时尝试获取当前位置用于快速定位
+        const geolocationService = new GeolocationService();
+        geolocationService
+          .getLocation()
+          .then((location) => {
+            console.log("Initial location data:", location);
+            statusText.textContent = "位置获取成功！持续跟踪已启动...";
+
+            // 创建模拟位置对象以兼容现有代码
+            const mockPosition = {
+              position: {
+                lat: location.latitude,
+                lng: location.longitude,
+              },
+              accuracy: location.accuracy,
+              timestamp: Date.now(),
+            };
+
+            handlePositionUpdate(mockPosition);
+          })
+          .catch((error) => {
+            console.error("Initial location error:", error);
+            statusText.textContent = `初始位置获取失败: ${error}。`;
+          });
+      }
+
+      // 简化getUserLocationAndWatch函数，避免重复逻辑
+      function startContinuousLocationTracking() {
+        if (watchId === null) {
+          statusText.textContent = "正在启动位置跟踪...";
+
+          // 使用高德地图API进行持续定位
+          AMap.plugin("AMap.Geolocation", () => {
+            geolocation = new AMap.Geolocation({
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 2000, // 位置缓存时间2秒
+              convert: true,
+              showButton: false,
+              showMarker: false,
+              showCircle: false,
+              panToLocation: false,
+              zoomToAccuracy: false,
+            });
+
+            // 启动持续定位
+            watchId = setInterval(() => {
+              geolocation.getCurrentPosition((status, result) => {
+                if (status === "complete") {
+                  handlePositionUpdate(result);
+                } else {
+                  const geolocationService = new GeolocationService();
+                  console.error("Watch position error:", result.message);
+                  statusText.textContent = `定位错误: ${result.message}`;
+                }
+              });
+            }, 2000); // 每2秒获取一次位置
+          });
+        }
+      }
+
+      // 停止位置监听
+      function stopWatching() {
+        if (watchId !== null) {
+          clearInterval(watchId);
+          watchId = null;
+        }
+      }
+
+      // 重置地图
+      function resetMap() {
+        stopWatching();
+
+        // 重新初始化迷雾
+        warFogMap = new WarFogMap("mapCanvas");
+
+        // 重绘界面
+        warFogMap.updateDisplay();
+
+        // 重新开始位置跟踪
+        startContinuousLocationTracking();
+      }
+
+      // 添加处理hash变化的函数
+      function handleHashChange() {
+        const hash = window.location.hash.substring(1); // 移除#符号
+        if (hash) {
+          // 查找匹配的建筑
+          const buildingIndex = Buildings.findIndex(
+            (building) => building.id === hash,
+          );
+          if (buildingIndex !== -1) {
+            // 更新建筑状态
+            Buildings[buildingIndex].status = 1;
+            // 保存到本地存储
+            localStorage.setItem("buildings_status", JSON.stringify(Buildings));
+            // 重新渲染底部面板
+            setGrid(
+              2,
+              Math.round(Buildings.length / 2),
+              rearrangeByIndexParity(Buildings),
+            );
+          }
+        }
+      }
+      function updateMetaDescription(contentText, createIfMissing = true) {
+        if (!contentText) return;
+
+        const selector = 'meta[name="description"]';
+        let metaTag = document.querySelector(selector);
+
+        if (!metaTag) {
+          if (createIfMissing) {
+            metaTag = document.createElement("meta");
+            metaTag.name = "description";
+            metaTag.setAttribute("itemprop", "description");
+            document.head.appendChild(metaTag);
+          } else {
+            console.warn("未找到 meta description 标签且未开启自动创建。");
+            return;
+          }
+        }
+
+        metaTag.setAttribute("content", contentText);
+        return true;
+      }
+      // 初始化
+      function init() {
+        // 页面加载时检查当前hash
+        // 从本地存储加载已保存的打卡状态
+        const savedBuildings = localStorage.getItem("buildings_status");
+        if (savedBuildings) {
+          const parsedBuildings = JSON.parse(savedBuildings);
+          // 更新Buildings数组中的status值
+          for (let i = 0; i < parsedBuildings.length; i++) {
+            if (Buildings[i] && parsedBuildings[i]) {
+              Buildings[i].status = parsedBuildings[i].status;
+            }
+          }
+        }
+        checkIn(Buildings);
+        // 添加hash变化监听
+        window.addEventListener("hashchange", handleHashChange);
+
+        setGrid(
+          2,
+          Math.round(Buildings.length / 2),
+          rearrangeByIndexParity(Buildings),
+        );
+        handleHashChange();
+
+        // 获取初始位置并启动持续跟踪
+        // getUserLocation();
+        startContinuousLocationTracking();
+        // 将用户位置居中
+        warFogMap.centerOnUser();
+        updateMetaDescription(
+          `我已在嘉兴南湖学院打卡了${Array.from(eval(localStorage.getItem("buildings_status"))).filter((item) => item.status === 1).length}处建筑`,
+        );
+      }
+
+      // 页面加载完成后初始化
+      window.onload = init;
+    </script>
+  </body>
+</html>
